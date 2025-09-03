@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terraform in Azure DevOps integrated with Terraform Cloud</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; margin: 24px; color: #0f172a; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    h2 { font-size: 20px; margin: 24px 0 8px; }
+    p, li, code, pre { font-size: 14px; line-height: 1.5; }
+    .canvas { border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; background: #ffffff; box-shadow: 0 8px 24px rgba(2,6,23,.06); }
+    .legend { font-size: 12px; color: #475569; }
+    svg { width: 100%; height: auto; }
+    .box { fill: #ffffff; stroke: #1f2937; stroke-width: 1.5; rx: 10; }
+    .title { font-weight: 700; fill: #0f172a; }
+    .sub { fill: #334155; }
+    .arrow { stroke: #1f2937; stroke-width: 1.5; marker-end: url(#arrowhead); fill: none; }
+    .group { filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.1)); }
+    pre { background: #0b1020; color: #e2e8f0; padding: 12px; border-radius: 12px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Terraform to Azure Repos → Azure Pipelines (Validate/Plan) → Terraform Cloud (Apply)</h1>
+  <p class="legend">High-level architecture and flow with branch-to-workspace mapping, pipeline gates, and Terraform Cloud integration.</p>
+
+  <div class="canvas">
+    <svg viewBox="0 0 1200 620" role="img" aria-label="Terraform Azure DevOps to Terraform Cloud architecture diagram">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#1f2937" />
+        </marker>
+      </defs>
+
+      <!-- Developer -->
+      <g class="group">
+        <rect class="box" x="40" y="60" width="220" height="110" />
+        <text class="title" x="150" y="95" text-anchor="middle">Developer</text>
+        <text class="sub" x="150" y="122" text-anchor="middle">IDE → git add/commit</text>
+        <text class="sub" x="150" y="142" text-anchor="middle">feature/* branches</text>
+      </g>
+
+      <!-- Azure Repos -->
+      <g class="group">
+        <rect class="box" x="320" y="40" width="260" height="150" />
+        <text class="title" x="450" y="72" text-anchor="middle">Azure Repos (Git)</text>
+        <text class="sub" x="450" y="98" text-anchor="middle">Branches: feature/*, develop, main</text>
+        <text class="sub" x="450" y="118" text-anchor="middle">PR policy: reviewers, checks</text>
+        <text class="sub" x="450" y="138" text-anchor="middle">Branch → TFC workspace map</text>
+      </g>
+
+      <!-- Azure Pipelines CI -->
+      <g class="group">
+        <rect class="box" x="640" y="24" width="260" height="182" />
+        <text class="title" x="770" y="56" text-anchor="middle">Azure Pipelines (Build)</text>
+        <text class="sub" x="770" y="82" text-anchor="middle">terraform fmt -check</text>
+        <text class="sub" x="770" y="102" text-anchor="middle">terraform validate</text>
+        <text class="sub" x="770" y="122" text-anchor="middle">tflint / tfsec (optional)</text>
+        <text class="sub" x="770" y="142" text-anchor="middle">terraform plan (remote)</text>
+        <text class="sub" x="770" y="162" text-anchor="middle">publish plan as artifact</text>
+      </g>
+
+      <!-- Terraform Cloud -->
+      <g class="group">
+        <rect class="box" x="940" y="40" width="220" height="150" />
+        <text class="title" x="1050" y="72" text-anchor="middle">Terraform Cloud</text>
+        <text class="sub" x="1050" y="98" text-anchor="middle">Remote state & runs</text>
+        <text class="sub" x="1050" y="118" text-anchor="middle">Sentinel policy checks</text>
+        <text class="sub" x="1050" y="138" text-anchor="middle">Apply plan</text>
+      </g>
+
+      <!-- Target -->
+      <g class="group">
+        <rect class="box" x="940" y="260" width="220" height="120" />
+        <text class="title" x="1050" y="292" text-anchor="middle">Target Infrastructure</text>
+        <text class="sub" x="1050" y="318" text-anchor="middle">Azure / AWS / GCP / others</text>
+        <text class="sub" x="1050" y="338" text-anchor="middle">Provisioned by Apply</text>
+      </g>
+
+      <!-- Secrets / KV -->
+      <g class="group">
+        <rect class="box" x="640" y="250" width="260" height="130" />
+        <text class="title" x="770" y="282" text-anchor="middle">Secrets & Variables</text>
+        <text class="sub" x="770" y="308" text-anchor="middle">Azure Key Vault → Pipeline</text>
+        <text class="sub" x="770" y="328" text-anchor="middle">TFC variables & TF_VAR_*</text>
+      </g>
+
+      <!-- Arrows top row -->
+      <line class="arrow" x1="260" y1="115" x2="320" y2="115" />
+      <line class="arrow" x1="580" y1="115" x2="640" y2="115" />
+      <line class="arrow" x1="900" y1="115" x2="940" y2="115" />
+      <line class="arrow" x1="1050" y1="190" x2="1050" y2="260" />
+
+      <!-- Arrows secrets to pipeline & TFC -->
+      <line class="arrow" x1="770" y1="250" x2="770" y2="206" />
+      <line class="arrow" x1="900" y1="315" x2="940" y2="315" />
+
+      <!-- PR loopback (status) -->
+      <path d="M 770 206 C 770 230, 650 230, 580 160" class="arrow" />
+      <text class="sub" x="640" y="224">PR status & comments</text>
+
+      <!-- Legend panel -->
+      <g class="group">
+        <rect class="box" x="40" y="260" width="560" height="320" />
+        <text class="title" x="320" y="292" text-anchor="middle">Flow (1 → 8)</text>
+        <text class="sub" x="60" y="318">1) Dev pushes to Azure Repos (feature/*, develop, main).</text>
+        <text class="sub" x="60" y="338">2) PR to protected branch triggers Azure Pipelines.</text>
+        <text class="sub" x="60" y="358">3) Pipeline runs fmt/validate (+ tflint/tfsec optional).</text>
+        <text class="sub" x="60" y="378">4) Pipeline uses Terraform Cloud remote backend and creates a plan.</text>
+        <text class="sub" x="60" y="398">5) Plan uploaded; Sentinel policies evaluated in TFC.</text>
+        <text class="sub" x="60" y="418">6) Plan summary posted to PR; artifact stored.</text>
+        <text class="sub" x="60" y="438">7) On approval, TFC applies plan (Auto-apply or manual).</text>
+        <text class="sub" x="60" y="458">8) State stored in TFC; infra provisioned in target cloud.</text>
+      </g>
+    </svg>
+  </div>
+
+  <h2>Key Technical Details</h2>
+  <ul>
+    <li><strong>Branch → Workspace mapping:</strong> Use <code>terraform { cloud { organization = "acme"; workspaces { tags = ["app1"] } } }</code> + TFC workspace tags, or configure distinct workspaces <code>dev</code>, <code>qa</code>, <code>prod</code> and map via pipeline variables.</li>
+    <li><strong>Remote state:</strong> Prefer Terraform Cloud remote backend (no local state). Keep sensitive values in TFC variables (sensitive) and Azure Key Vault for provider creds.</li>
+    <li><strong>Auth:</strong> In Azure Pipelines, inject <code>TFC_TOKEN</code> (as secret). In Terraform, use <code>TF_CLOUD_ORGANIZATION</code> and workspace name or tags, or the <code>terraform { cloud { ... } }</code> block.</li>
+    <li><strong>Plan visibility:</strong> Publish <code>plan.out</code> as a build artifact and post a summarized plan to the PR using a script or an extension.</li>
+    <li><strong>Gates:</strong> Protect branches with required reviewers and a successful Build policy. In TFC, enable Sentinel/OPA policies before apply.</li>
+    <li><strong>Security:</strong> Pull provider creds from Azure Key Vault (pipeline variable groups) and scope them per environment.</li>
+    <li><strong>Apply:</strong> Use Terraform Cloud to run applies; choose <em>Auto-apply</em> for non-prod and <em>manual</em> for prod.</li>
+  </ul>
+
+  <h2>Minimal azure-pipelines.yml</h2>
+  <pre>
+trigger:
+  branches:
+    include: [ feature/*, develop, main ]
+
+pr:
+  branches:
+    include: [ develop, main ]
+
+variables:
+  TF_CLOUD_ORGANIZATION: acme
+  TF_WORKSPACE: $(Build.SourceBranchName)   # e.g., dev/qa/prod via branch naming
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+- task: Bash@3
+  displayName: Install Terraform
+  inputs:
+    targetType: inline
+    script: |
+      curl -fsSL https://releases.hashicorp.com/terraform/1.9.5/terraform_1.9.5_linux_amd64.zip -o tf.zip
+      sudo unzip -o tf.zip -d /usr/local/bin
+
+- task: Bash@3
+  displayName: Terraform fmt & validate
+  inputs:
+    targetType: inline
+    script: |
+      terraform -version
+      terraform fmt -check -recursive
+      terraform init
+      terraform validate
+
+- task: Bash@3
+  displayName: Terraform plan (remote in Terraform Cloud)
+  env:
+    TF_TOKEN_app_terraform_io: $(TFC_TOKEN)  # service connection secret
+  inputs:
+    targetType: inline
+    script: |
+      export TF_CLOUD_ORGANIZATION=$(TF_CLOUD_ORGANIZATION)
+      terraform init
+      terraform workspace select $(TF_WORKSPACE) || terraform workspace new $(TF_WORKSPACE)
+      terraform plan -out=plan.out -input=false
+      terraform show -no-color plan.out > plan.txt
+
+- publish: plan.out
+  artifact: tfplan
+
+# Optionally comment plan summary to PR using REST API or an extension.
+  </pre>
+
+  <h2>terraform { cloud {} } example</h2>
+  <pre>
+terraform {
+  cloud {
+    organization = "acme"
+    workspaces {
+      name = var.workspace_name # or use tags = ["app1", var.env]
+    }
+  }
+  required_version = ">= 1.5.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.100"
+    }
+  }
+}
+  </pre>
+
+  <h2>Best Practices</h2>
+  <ul>
+    <li>Enable branch protection and mandatory CI for <code>develop</code> and <code>main</code>.</li>
+    <li>Run <code>tflint</code> and <code>tfsec</code> in CI for static analysis.</li>
+    <li>Use separate TFC workspaces per environment; avoid sharing state.</li>
+    <li>Store provider creds in Azure Key Vault; never hardcode secrets.</li>
+    <li>Gate <em>apply</em> with Sentinel policies and manual approvals for production.</li>
+  </ul>
+</body>
+</html>
