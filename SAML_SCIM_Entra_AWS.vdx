@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisioDocument xmlns="http://schemas.microsoft.com/visio/2003/core" 
+               xmlns:v="http://schemas.microsoft.com/visio/2003/core" 
+               xml:space="preserve">
+  <DocumentProperties>
+    <Creator>ChatGPT</Creator>
+    <Title>SAML &amp; SCIM: Entra ID to AWS IAM Identity Center</Title>
+  </DocumentProperties>
+  <Pages>
+    <Page ID="1" NameU="Page-1">
+      <PageSheet>
+        <PageProps>
+          <PageWidth>11</PageWidth>
+          <PageHeight>8.5</PageHeight>
+        </PageProps>
+      </PageSheet>
+      <Shapes>
+        <!-- Microsoft Entra ID box -->
+        <Shape ID="1" NameU="EntraID" Type="Shape">
+          <XForm>
+            <PinX>2.0</PinX>
+            <PinY>6.5</PinY>
+            <Width>3.0</Width>
+            <Height>1.2</Height>
+          </XForm>
+          <Geom IX="0">
+            <MoveTo X="0" Y="0"/>
+            <LineTo X="3.0" Y="0"/>
+            <LineTo X="3.0" Y="1.2"/>
+            <LineTo X="0" Y="1.2"/>
+            <LineTo X="0" Y="0"/>
+          </Geom>
+          <Text>Microsoft Entra ID&#10;(Identity Provider)&#10;- Users &amp; Groups&#10;- SAML IdP</Text>
+        </Shape>
+
+        <!-- AWS IAM Identity Center box -->
+        <Shape ID="2" NameU="IAMIdentityCenter" Type="Shape">
+          <XForm>
+            <PinX>7.5</PinX>
+            <PinY>6.5</PinY>
+            <Width>3.2</Width>
+            <Height>1.4</Height>
+          </XForm>
+          <Geom IX="0">
+            <MoveTo X="0" Y="0"/>
+            <LineTo X="3.2" Y="0"/>
+            <LineTo X="3.2" Y="1.4"/>
+            <LineTo X="0" Y="1.4"/>
+            <LineTo X="0" Y="0"/>
+          </Geom>
+          <Text>AWS IAM Identity Center&#10;(Service Provider)&#10;- SCIM Provisioning&#10;- SAML SP</Text>
+        </Shape>
+
+        <!-- AWS Console box -->
+        <Shape ID="3" NameU="AWSConsole" Type="Shape">
+          <XForm>
+            <PinX>7.5</PinX>
+            <PinY>3.5</PinY>
+            <Width>2.6</Width>
+            <Height>0.9</Height>
+          </XForm>
+          <Geom IX="0">
+            <MoveTo X="0" Y="0"/>
+            <LineTo X="2.6" Y="0"/>
+            <LineTo X="2.6" Y="0.9"/>
+            <LineTo X="0" Y="0.9"/>
+            <LineTo X="0" Y="0"/>
+          </Geom>
+          <Text>AWS Console / Apps</Text>
+        </Shape>
+
+        <!-- Connector: SCIM Provisioning (Entra -> Identity Center) -->
+        <Shape ID="10" NameU="Connector1" Type="Shape">
+          <XForm1D>
+            <BeginX>3.5</BeginX>
+            <BeginY>6.5</BeginY>
+            <EndX>6.0</EndX>
+            <EndY>6.5</EndY>
+          </XForm1D>
+          <Geom IX="1">
+            <MoveTo X="0" Y="0"/>
+            <LineTo X="2.5" Y="0"/>
+          </Geom>
+          <Text>SCIM Provisioning</Text>
+        </Shape>
+
+        <!-- Connector: SAML Federation (Identity Center -> Entra) -->
+        <Shape ID="11" NameU="Connector2" Type="Shape">
+          <XForm1D>
+            <BeginX>6.0</BeginX>
+            <BeginY>6.0</BeginY>
+            <EndX>3.5</EndX>
+            <EndY>6.0</EndY>
+          </XForm1D>
+          <Geom IX="1">
+            <MoveTo X="0" Y="0"/>
+            <LineTo X="-2.5" Y="0"/>
+          </Geom>
+          <Text>SAML Federation</Text>
+        </Shape>
+
+        <!-- Connector: Auth to AWS Console (Identity Center -> AWS Console) -->
+        <Shape ID="12" NameU="Connector3" Type="Shape">
+          <XForm1D>
+            <BeginX>7.5</BeginX>
+            <BeginY>5.8</BeginY>
+            <EndX>7.5</EndX>
+            <EndY>4.0</EndY>
+          </XForm1D>
+          <Geom IX="1">
+            <MoveTo X="0" Y="0"/>
+            <LineTo X="0" Y="-1.8"/>
+          </Geom>
+          <Text>Authentication</Text>
+        </Shape>
+
+      </Shapes>
+    </Page>
+  </Pages>
+</VisioDocument>
